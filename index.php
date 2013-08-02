@@ -1,32 +1,13 @@
 <?php
 
-// Current data
-$file = fopen('docs/temp.txt', 'r');
+	// Current data
+	$file = fopen('/home/pi/www/DHT22/docs/temp.txt', 'r');
 
-$data = fscanf($file, "%s %s %f %f\n");
-list($current_date, $current_time, $current_temp, $current_hud) = $data;
-$current_date = $current_date." ".$current_time;
-
-fclose($file);
-
-// Read history data
-$file = fopen('docs/history.txt', 'r');
-
-$past_date = array();
-$past_temp = array();
-$past_hud =array();
-
-for ($i = 0; $i < 10; $i++ ){
 	$data = fscanf($file, "%s %s %f %f\n");
-	list($cell_date, $cell_time, $cell_temp, $cell_hud) = $data;
-	$cell_date = $cell_date." ".$cell_time;
+	list($current_date, $current_time, $current_temp, $current_hud) = $data;
+	$current_date = $current_date." ".$current_time;
 
-	array_push($past_date, $cell_date);
-	array_push($past_temp, $cell_temp);
-	array_push($past_hud, $cell_hud);
-}
-
-fclose($file);
+	fclose($file);
 ?>
 
 <!DOCTYPE html>
@@ -36,27 +17,109 @@ fclose($file);
 		<meta charset='utf-8'> 
 		<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
 		<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+		<script src="js/uikit.min.js"></script>
+
 		<link rel="stylesheet" href="css/normalize.css" />
 		<link rel="stylesheet" href="css/uikit.min.css" />
-		<script src="js/uikit.min.js"></script>
+
+		<!-- ============ AJAX ============ -->
+		<script>
+
+			var jsonTemp;
+			var jsonHud;
+
+			function sleep(milliseconds) {
+				var start = new Date().getTime();
+				
+				for (var i = 0; i < 1e7; i++) {
+					if ((new Date().getTime() - start) > milliseconds){
+						break;
+					}
+				}
+			}
+
+			function getCurrentTemp() {
+
+				var xmlhttp;
+				var temp;
+				var date;
+				var hud;
+
+				// Spin icon
+				var icon = document.getElementById("refresh");
+				icon.className = icon.className + " uk-icon-spin";
+
+				if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
+ 					xmlhttp = new XMLHttpRequest();
+ 					historyhttp = new XMLHttpRequest();
+				}
+
+
+				// Current
+				xmlhttp.onreadystatechange = function() {
+					if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+						// Current data
+						temp = xmlhttp.responseXML.documentElement.getElementsByTagName("TEMP");
+						hud = xmlhttp.responseXML.documentElement.getElementsByTagName("HUD");
+						date = xmlhttp.responseXML.documentElement.getElementsByTagName("DATE");
+
+						temp = temp[0].firstChild.nodeValue;
+						hud = hud[0].firstChild.nodeValue;
+						date = date[0].firstChild.nodeValue;
+
+						jsonTemp = $.ajax({
+							url: "getTempData.php",
+							dataType:"json",
+							async: false
+						}).responseText;
+
+						sleep(1000);
+
+						jsonHud = $.ajax({
+							url: "getHudData.php",
+							dataType:"json",
+							async: false
+						}).responseText;
+
+						document.getElementById("temp").innerHTML=temp+" *C";
+						document.getElementById("date").innerHTML=date;
+						document.getElementById("hud").innerHTML=hud+" %";
+
+						drawChart();
+
+						icon.className = "uk-icon-refresh uk-icon-large";
+					}
+				}
+
+				xmlhttp.open("GET","xml/temp.xml",true);
+				xmlhttp.send();
+			}
+		</script>
+
 
 	    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 	    <script type="text/javascript">
+
+			jsonTemp = $.ajax({
+				url: "getTempData.php",
+				dataType:"json",
+				async: false
+			}).responseText;
+
+			jsonHud = $.ajax({
+				url: "getHudData.php",
+				dataType:"json",
+				async: false
+			}).responseText;
+
 	      google.load("visualization", "1", {packages:["corechart"]});
 	      google.setOnLoadCallback(drawChart);
+
 	      function drawChart() {
 
 	      	// Draw Temperature
-	        var data_temp = new google.visualization.DataTable();
-	        data_temp.addColumn('string', 'Date');
-	        data_temp.addColumn('number', 'Temperature(*C)');
-	        data_temp.addRows([
-<?php
-for($i = 5; $i < 9; $i++)
-	echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."],\n";
-echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."]\n";
-?>
-	        ]);
+	        var data_temp = new google.visualization.DataTable(jsonTemp);
 
 	        var options_temp = {
 	        	pointSize: 5,
@@ -67,16 +130,7 @@ echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."]\n";
 	        chart_temp.draw(data_temp, options_temp);
 
 	        // Draw Humidity
-	        var data_hud = new google.visualization.DataTable();
-	        data_hud.addColumn('string', 'Date');
-	        data_hud.addColumn('number', 'Humidity(%)');
-	        data_hud.addRows([
-<?php
-for($i = 5; $i < 9; $i++)
-	echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."],\n";
-echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
-?>
-	        ]);
+	        var data_hud = new google.visualization.DataTable(jsonHud);
 
 	        var options_hud = {
 	        	pointSize: 5,
@@ -86,6 +140,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 
 	        var chart_hud = new google.visualization.LineChart(document.getElementById('chart_hud'));
 	        chart_hud.draw(data_hud, options_hud);
+	        
 	      }
 	    </script>
 
@@ -106,7 +161,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 				<div class="uk-width-medium-1-2">
 					<div class="uk-panel uk-panel-box">
 						<h3 class="uk-panel-title"><i class="uk-icon-sun"></i> Temperature</h3>
-						<div class="uk-align-center"><h1>
+						<div class="uk-align-center"><h1 id="temp">
 	<?php
 		echo $current_temp." *C";
 	?>
@@ -116,7 +171,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 				<div class="uk-width-medium-1-2">
 					<div class="uk-panel uk-panel-box">
 						<h3 class="uk-panel-title"><i class="uk-icon-tint"></i> Humidity</h3>
-						<div class="uk-align-center"><h1>
+						<div class="uk-align-center"><h1 id="hud">
 	<?php
 		echo $current_hud." %";
 	?>
@@ -128,7 +183,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 				<div class="uk-width-medium-1-2">
 					<div class="uk-panel uk-panel-box" style="height:90px;">
 						<h3 class="uk-panel-title"><i class="uk-icon-refresh"></i> Last update</h3>
-						<div class="uk-align-center"><h2>
+						<div class="uk-align-center"><h2 id="date">
 		<?php
 			echo $current_date;
 		?>
@@ -137,14 +192,14 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 				</div>
 				<div class="uk-width-medium-1-2">
 					<div class="uk-panel uk-panel-box" style="height:90px;">
-						<a href="." style="font-size:35px;" class="uk-icon-refresh uk-icon-large"></a>
+						<a style="font-size:35px;" id="refresh" class="uk-icon-refresh uk-icon-large" onclick="getCurrentTemp()"></a>
 					</div>
 				</div>
 			</div>
 			<div class="uk-grid">
 				<div class="uk-width-medium-1-1">
 					<div class="uk-panel uk-panel-box">
-						<h3 class="uk-panel-title"><i class="uk-icon-bar-chart"></i> Temperature<small> (*C)</small> history </br><small> (Refresh every 30 mins)</small></h3>
+						<h3 class="uk-panel-title"><i class="uk-icon-bar-chart"></i> Temperature<small> (*C)</small> history </br></h3>
 						<div id="chart_temp" ></div>
 					</div>
 				</div>
@@ -152,7 +207,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 			<div class="uk-grid">
 				<div class="uk-width-medium-1-1">
 					<div class="uk-panel uk-panel-box">
-						<h3 class="uk-panel-title"><i class="uk-icon-bar-chart"></i> Humidity<small> (%)</small> history </br><small> (Refresh every 30 mins)</small></h3>
+						<h3 class="uk-panel-title"><i class="uk-icon-bar-chart"></i> Humidity<small> (%)</small> history </br></h3>
 						<div id="chart_hud" ></div>
 					</div>
 				</div>
