@@ -74,13 +74,13 @@
 							async: false
 						}).responseText;
 
-						sleep(1000);
-
 						jsonHud = $.ajax({
 							url: "getHudData.php",
 							dataType:"json",
 							async: false
 						}).responseText;
+
+						sleep(1000);
 
 						document.getElementById("temp").innerHTML=temp+" *C";
 						document.getElementById("date").innerHTML=date;
