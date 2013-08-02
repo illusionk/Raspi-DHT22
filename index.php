@@ -10,7 +10,7 @@ $current_date = $current_date." ".$current_time;
 fclose($file);
 
 // Read history data
-$file = fopen('docs/last10.txt', 'r');
+$file = fopen('docs/history.txt', 'r');
 
 $past_date = array();
 $past_temp = array();

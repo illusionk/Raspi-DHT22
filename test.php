@@ -10,7 +10,7 @@
 	fclose($file);
 
 	// Read history data
-	$file = fopen('/home/pi/www/DHT22/docs/last10.txt', 'r');
+	$file = fopen('/home/pi/www/DHT22/docs/history.txt', 'r');
 
 	$past_date = array();
 	$past_temp = array();
