@@ -34,6 +34,6 @@ file.close()
 file = open('/home/pi/www/DHT22/xml/history.xml', 'w')
 file.write("<CATALOG>")
 for cell in array:
-	file.write("<RECORD>\n\t<DATE>%s</DATE>\n\t\t<TEMP>%s</TEMP>\n\t\t<HUD>%s</HUD>\n\t</RECORD>" % (cell[0], cell[1], cell[2]))
+	file.write("\n\t<RECORD>\n\t\t<DATE>%s</DATE>\n\t\t<TEMP>%s</TEMP>\n\t\t<HUD>%s</HUD>\n\t</RECORD>" % (cell[0], cell[1], cell[2]))
 file.write("</CATALOG>")
 file.close()
