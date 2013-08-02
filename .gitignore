@@ -4,5 +4,6 @@
 *.bak
 *.log 
 *.DS_Store
+.DS_Store
 [Tt]est[Rr]esult*
 [Tt]humbs.db 
