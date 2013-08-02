@@ -2,7 +2,7 @@
 import re
 
 # Read Data
-file = open('/home/pi/www/DHT22/docs/last10.txt', 'r')
+file = open('/home/pi/www/DHT22/docs/history.txt', 'r')
 lines = file.readlines();
 file.close()
 
