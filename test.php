@@ -8,25 +8,6 @@
 	$current_date = $current_date." ".$current_time;
 
 	fclose($file);
-
-	// Read history data
-	$file = fopen('/home/pi/www/DHT22/docs/history.txt', 'r');
-
-	$past_date = array();
-	$past_temp = array();
-	$past_hud = array();
-	for ($i = 0; $i < 10; $i++ ){
-		$data = fscanf($file, "%s %s %f %f\n");
-		list($cell_date, $cell_time, $cell_temp, $cell_hud) = $data;
-		$cell_date = $cell_date." ".$cell_time;
-
-		array_push($past_date, $cell_date);
-		array_push($past_temp, $cell_temp);
-		array_push($past_hud, $cell_hud);
-	}
-
-	fclose($file);
-
 ?>
 
 <!DOCTYPE html>
@@ -43,6 +24,10 @@
 
 		<!-- ============ AJAX ============ -->
 		<script>
+
+			var jsonTemp;
+			var jsonHud;
+
 			function sleep(milliseconds) {
 				var start = new Date().getTime();
 				
@@ -65,11 +50,16 @@
 				icon.className = icon.className + " uk-icon-spin";
 
 				if (window.XMLHttpRequest) { // code for IE7+, Firefox, Chrome, Opera, Safari
- 					xmlhttp=new XMLHttpRequest();
+ 					xmlhttp = new XMLHttpRequest();
+ 					historyhttp = new XMLHttpRequest();
 				}
 
+
+				// Current
 				xmlhttp.onreadystatechange = function() {
 					if (xmlhttp.readyState==4 && xmlhttp.status==200) {
+
+						// Current data
 						temp = xmlhttp.responseXML.documentElement.getElementsByTagName("TEMP");
 						hud = xmlhttp.responseXML.documentElement.getElementsByTagName("HUD");
 						date = xmlhttp.responseXML.documentElement.getElementsByTagName("DATE");
@@ -78,15 +68,30 @@
 						hud = hud[0].firstChild.nodeValue;
 						date = date[0].firstChild.nodeValue;
 
+						jsonTemp = $.ajax({
+							url: "getTempData.php",
+							dataType:"json",
+							async: false
+						}).responseText;
+
 						sleep(1000);
+
+						jsonHud = $.ajax({
+							url: "getHudData.php",
+							dataType:"json",
+							async: false
+						}).responseText;
 
 						document.getElementById("temp").innerHTML=temp+" *C";
 						document.getElementById("date").innerHTML=date;
 						document.getElementById("hud").innerHTML=hud+" %";
 
+						drawChart();
+
 						icon.className = "uk-icon-refresh uk-icon-large";
 					}
 				}
+
 				xmlhttp.open("GET","xml/temp.xml",true);
 				xmlhttp.send();
 			}
@@ -95,21 +100,26 @@
 
 	    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
 	    <script type="text/javascript">
+
+			jsonTemp = $.ajax({
+				url: "getTempData.php",
+				dataType:"json",
+				async: false
+			}).responseText;
+
+			jsonHud = $.ajax({
+				url: "getHudData.php",
+				dataType:"json",
+				async: false
+			}).responseText;
+
 	      google.load("visualization", "1", {packages:["corechart"]});
 	      google.setOnLoadCallback(drawChart);
+
 	      function drawChart() {
 
 	      	// Draw Temperature
-	        var data_temp = new google.visualization.DataTable();
-	        data_temp.addColumn('string', 'Date');
-	        data_temp.addColumn('number', 'Temperature(*C)');
-	        data_temp.addRows([
-<?php
-for($i = 5; $i < 9; $i++)
-	echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."],\n";
-echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."]\n";
-?>
-	        ]);
+	        var data_temp = new google.visualization.DataTable(jsonTemp);
 
 	        var options_temp = {
 	        	pointSize: 5,
@@ -120,16 +130,7 @@ echo "			  ['".$past_date[$i]."', ".$past_temp[$i]."]\n";
 	        chart_temp.draw(data_temp, options_temp);
 
 	        // Draw Humidity
-	        var data_hud = new google.visualization.DataTable();
-	        data_hud.addColumn('string', 'Date');
-	        data_hud.addColumn('number', 'Humidity(%)');
-	        data_hud.addRows([
-<?php
-for($i = 5; $i < 9; $i++)
-	echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."],\n";
-echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
-?>
-	        ]);
+	        var data_hud = new google.visualization.DataTable(jsonHud);
 
 	        var options_hud = {
 	        	pointSize: 5,
@@ -139,6 +140,7 @@ echo "			  ['".$past_date[$i]."', ".$past_hud[$i]."]\n";
 
 	        var chart_hud = new google.visualization.LineChart(document.getElementById('chart_hud'));
 	        chart_hud.draw(data_hud, options_hud);
+	        
 	      }
 	    </script>
 
