@@ -2,7 +2,7 @@
 
 	// Current data
 	// Read history data
-	$file = fopen('/home/pi/www/DHT22/docs/history.txt', 'r');
+	$file = fopen('docs/history.txt', 'r');
 
 	$table = array();
 

@@ -1,7 +1,7 @@
 <?php
 
 	// Current data
-	$file = fopen('/home/pi/www/DHT22/docs/temp.txt', 'r');
+	$file = fopen('docs/temp.txt', 'r');
 
 	$data = fscanf($file, "%s %s %f %f\n");
 	list($current_date, $current_time, $current_temp, $current_hud) = $data;
