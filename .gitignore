@@ -1,0 +1,8 @@
+*.user
+*.suo
+*.[Cc]ache
+*.bak
+*.log 
+*.DS_Store
+[Tt]est[Rr]esult*
+[Tt]humbs.db 
