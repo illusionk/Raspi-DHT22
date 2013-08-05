@@ -1,6 +1,6 @@
 docs/
 xml/
-.AppleDouble
+*.AppleDouble
 *.user
 *.suo
 *.[Cc]ache
